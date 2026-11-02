@@ -10,6 +10,7 @@ from .help_view import draw_help
 from .hints import draw_context
 from .campaign import Campaign
 from .audio import Audio
+from .camera import Camera
 
 WIDTH, HEIGHT = 1100, 780
 
@@ -20,6 +21,7 @@ class App:
         self.world = World()
         self.campaign = Campaign()
         self.audio = Audio()
+        self.camera = Camera()
         self.effects = Effects()
         self.keys = set()
         self.pressed = set()
@@ -53,6 +55,8 @@ class App:
         self.clock += dt
         if p.SDLK_m in self.pressed:
             self.audio.muted = not self.audio.muted
+        if p.SDLK_F4 in self.pressed:
+            self.camera.enabled = not self.camera.enabled
         if p.SDLK_h in self.pressed:
             self.help = not self.help
         if self.help:
@@ -94,7 +98,9 @@ class App:
             self.world.update(dt, controls)
             self.effects.receive(self.world.events)
             self.audio.receive(self.world.events)
+            self.camera.receive(self.world.events)
             self.effects.update(dt)
+            self.camera.update(dt)
         self.pressed.clear()
 
     def render(self):
@@ -103,8 +109,10 @@ class App:
         if self.screen == 'menu':
             draw_menu(self.draw, self.clock)
         else:
+            self.draw.offset = self.camera.offset()
             draw_world(self.draw, self.world, self.mouse)
             self.effects.draw(self.draw)
+            self.draw.offset = (0, 0)
             draw_hud(self.draw, self.world)
             draw_context(self.draw, self.world, self.mouse)
             if self.paused:
