@@ -5,6 +5,7 @@ from .geometry import unit
 from .movement import move_player
 from .shedding import shed
 from .shells import update_shells
+from .equipment import equip, update_equip
 
 
 class World:
@@ -53,5 +54,8 @@ class World:
         p.facing = unit(controls.aim[0] - p.x, controls.aim[1] - p.y)
         if controls.shed:
             shed(self)
+        if controls.equip:
+            equip(self, controls.aim)
         move_player(self, controls.dx, controls.dy, dt)
         update_shells(self, dt)
+        update_equip(self, dt)
