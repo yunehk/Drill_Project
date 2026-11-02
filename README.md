@@ -1,4 +1,6 @@
-# Drill 12 — SHELLBOUND
+# Drill_Project — SHELLBOUND
+
+탈피 게임의 독립 프로젝트입니다. 수업 과제용 `Drill_12` 저장소와 별도로 관리합니다.
 
 ## 1차 발표 자료
 

@@ -14,4 +14,4 @@ def ensure_renderer():
     # Keep drawing and mouse input in the same coordinate system at any DPI.
     if p.SDL_RenderSetLogicalSize(runtime.renderer, 1100, 780) != 0:
         raise RuntimeError('화면 좌표 초기화 실패: '+p.SDL_GetError().decode(errors='replace'))
-    p.SDL_SetWindowTitle(runtime.window, 'SHELLBOUND | Drill 12'.encode())
+    p.SDL_SetWindowTitle(runtime.window, 'SHELLBOUND | Drill_Project'.encode())
