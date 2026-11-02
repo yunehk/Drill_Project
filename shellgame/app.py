@@ -11,12 +11,14 @@ from .hints import draw_context
 from .campaign import Campaign
 from .audio import Audio
 from .camera import Camera
+from .runtime import ensure_renderer
 
 WIDTH, HEIGHT = 1100, 780
 
 
 class App:
     def __init__(self):
+        ensure_renderer()
         self.draw = Painter()
         self.world = World()
         self.campaign = Campaign()
