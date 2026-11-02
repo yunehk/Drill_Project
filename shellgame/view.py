@@ -24,7 +24,11 @@ def draw_world(draw, world, mouse):
         enemy(draw, entity, world.time)
     monster(draw, p, world.time)
     if p.form == 1 and p.dash is None:
-        direction, target = aim(world, mouse)
+        if world.aim_direction is not None:
+            direction, target = p.facing, None
+            draw.text(650, 82, '방향키: 직선 조준 고정', GREEN, 17)
+        else:
+            direction, target = aim(world, mouse)
         points, end, hit = preview(world, direction)
         color = GREEN if target else GOLD
         for x, y in points[2:]:
@@ -35,9 +39,12 @@ def draw_world(draw, world, mouse):
             tx, ty = (obj.x, obj.y) if kind == 'enemy' else obj
             draw.circle(tx, ty, 28, GREEN, False)
             draw.text(tx-30, ty+43, '조준 보정', GREEN, 14)
+    saved_offset = draw.offset
+    draw.offset = (0, 0)
     draw.circle(*mouse, 7, CYAN, False)
     draw.line(mouse[0]-12, mouse[1], mouse[0]+12, mouse[1], CYAN)
     draw.line(mouse[0], mouse[1]-12, mouse[0], mouse[1]+12, CYAN)
+    draw.offset = saved_offset
 
 
 def draw_menu(draw, clock):

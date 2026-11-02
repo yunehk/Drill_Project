@@ -12,6 +12,7 @@ from .campaign import Campaign
 from .audio import Audio
 from .camera import Camera
 from .runtime import ensure_renderer
+from .pointer import current_pointer
 
 WIDTH, HEIGHT = 1100, 780
 
@@ -34,6 +35,7 @@ class App:
         self.help = False
         self.paused = False
         self.practice = False
+        self.click_throw = False
 
     def event(self, event):
         if event.type == p.SDL_QUIT:
@@ -48,6 +50,10 @@ class App:
             self.mouse = (event.x, HEIGHT-1-event.y)
             if event.type == p.SDL_MOUSEBUTTONDOWN and self.screen == 'menu':
                 self.screen = 'play'
+            elif (event.type == p.SDL_MOUSEBUTTONDOWN
+                  and getattr(event, 'button', None) == p.SDL_BUTTON_LEFT
+                  and self.screen == 'play' and not self.paused and not self.help):
+                self.click_throw = True
         elif event.type == p.SDL_WINDOWEVENT:
             if event.event == p.SDL_WINDOWEVENT_FOCUS_LOST:
                 self.keys.clear()
@@ -74,6 +80,7 @@ class App:
             if p.SDLK_RETURN in self.pressed:
                 self.help = False
             self.pressed.clear()
+            self.click_throw = False
             return
         if p.SDLK_ESCAPE in self.pressed:
             if self.screen == 'menu':
@@ -102,11 +109,14 @@ class App:
             self.paused = False
         if self.screen == 'play' and not self.paused:
             self.world.practice = self.practice
+            ax = int(p.SDLK_RIGHT in self.keys)-int(p.SDLK_LEFT in self.keys)
+            ay = int(p.SDLK_UP in self.keys)-int(p.SDLK_DOWN in self.keys)
+            fixed_direction = (ax, ay) if ax or ay else None
             controls = Controls(
                 int(p.SDLK_d in self.keys)-int(p.SDLK_a in self.keys),
                 int(p.SDLK_w in self.keys)-int(p.SDLK_s in self.keys),
-                self.mouse, p.SDLK_SPACE in self.pressed,
-                p.SDLK_e in self.pressed)
+                self.mouse, p.SDLK_SPACE in self.pressed or self.click_throw,
+                p.SDLK_e in self.pressed, fixed_direction)
             self.world.update(dt, controls)
             self.effects.receive(self.world.events)
             self.audio.receive(self.world.events)
@@ -114,6 +124,7 @@ class App:
             self.effects.update(dt)
             self.camera.update(dt)
         self.pressed.clear()
+        self.click_throw = False
 
     def render(self):
         p.clear_canvas()
@@ -121,7 +132,8 @@ class App:
         if self.screen == 'menu':
             draw_menu(self.draw, self.clock)
         else:
-            self.draw.offset = self.camera.offset()
+            # Precision aiming should not move the target underneath the cursor.
+            self.draw.offset = (0, 0) if self.world.player.form == 1 else self.camera.offset()
             draw_world(self.draw, self.world, self.mouse)
             self.effects.draw(self.draw)
             self.draw.offset = (0, 0)
@@ -154,6 +166,9 @@ def run(max_frames=None):
             previous = now
             for event in p.get_events():
                 app.event(event)
+            pointer = current_pointer()
+            if pointer is not None:
+                app.mouse = pointer
             app.update(dt)
             app.render()
             frames += 1

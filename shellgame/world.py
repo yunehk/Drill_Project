@@ -27,6 +27,7 @@ class World:
         self.gate_open = self.room['gate'] is None
         self.result = None
         self.practice = False
+        self.aim_direction = None
         self.events = []
         self.message = self.room['hint']
         self.message_time = 7.0
@@ -60,6 +61,9 @@ class World:
         p.facing = unit(controls.aim[0] - p.x, controls.aim[1] - p.y)
         if p.form == 1:
             p.facing, _ = aim(self, controls.aim)
+        self.aim_direction = controls.direction
+        if self.aim_direction is not None:
+            p.facing = unit(*self.aim_direction)
         if controls.shed:
             shed(self)
         if controls.equip:

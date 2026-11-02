@@ -9,3 +9,4 @@ class Controls:
     aim: tuple = (850, 350)
     shed: bool = False
     equip: bool = False
+    direction: object = None
