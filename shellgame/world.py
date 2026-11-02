@@ -9,6 +9,7 @@ from .equipment import equip, update_equip
 from .turrets import update_turrets
 from .combat import update_bullets
 from .enemies import update_enemies
+from .objectives import update_objectives
 
 
 class World:
@@ -65,3 +66,4 @@ class World:
         update_turrets(self, dt)
         update_bullets(self, dt)
         update_enemies(self, dt)
+        update_objectives(self)
