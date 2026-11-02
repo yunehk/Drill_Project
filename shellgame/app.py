@@ -26,6 +26,7 @@ class App:
         self.running = True
         self.clock = 0
         self.help = False
+        self.paused = False
 
     def event(self, event):
         if event.type == p.SDL_QUIT:
@@ -43,6 +44,8 @@ class App:
         elif event.type == p.SDL_WINDOWEVENT:
             if event.event == p.SDL_WINDOWEVENT_FOCUS_LOST:
                 self.keys.clear()
+                if self.screen == 'play':
+                    self.paused = True
 
     def update(self, dt):
         self.clock += dt
@@ -57,9 +60,11 @@ class App:
             if self.screen == 'menu':
                 self.running = False
             else:
-                self.screen = 'menu'
+                self.paused = not self.paused
         if p.SDLK_RETURN in self.pressed:
-            if self.screen == 'complete':
+            if self.paused:
+                self.paused = False
+            elif self.screen == 'complete':
                 self.world = World()
                 self.screen = 'menu'
             elif self.screen == 'play' and self.world.result == 'clear':
@@ -74,7 +79,9 @@ class App:
         if p.SDLK_r in self.pressed:
             self.world = World(self.world.index)
             self.effects = Effects()
-        if self.screen == 'play':
+            self.screen = 'play'
+            self.paused = False
+        if self.screen == 'play' and not self.paused:
             controls = Controls(
                 int(p.SDLK_d in self.keys)-int(p.SDLK_a in self.keys),
                 int(p.SDLK_w in self.keys)-int(p.SDLK_s in self.keys),
@@ -95,7 +102,9 @@ class App:
             self.effects.draw(self.draw)
             draw_hud(self.draw, self.world)
             draw_context(self.draw, self.world, self.mouse)
-            if self.screen == 'complete':
+            if self.paused:
+                panel(self.draw, '잠깐 쉬는 중', 'Esc / Enter: 계속하기    R: 현재 방 재시작')
+            elif self.screen == 'complete':
                 total = sum(r['time'] for r in self.campaign.records.values())
                 panel(self.draw, '세 방 탈출 성공!', f'총 기록 {total:.1f}초. Enter: 시작 화면 / R: 마지막 방 재도전')
             elif self.world.result:
