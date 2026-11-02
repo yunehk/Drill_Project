@@ -4,6 +4,7 @@ from .levels import ROOMS, BOUNDS
 from .geometry import unit
 from .movement import move_player
 from .shedding import shed
+from .shells import update_shells
 
 
 class World:
@@ -53,3 +54,4 @@ class World:
         if controls.shed:
             shed(self)
         move_player(self, controls.dx, controls.dy, dt)
+        update_shells(self, dt)
