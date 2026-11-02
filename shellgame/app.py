@@ -8,6 +8,7 @@ from .ui import draw_hud, panel
 from .effects import Effects
 from .help_view import draw_help
 from .hints import draw_context
+from .campaign import Campaign
 
 WIDTH, HEIGHT = 1100, 780
 
@@ -16,6 +17,7 @@ class App:
     def __init__(self):
         self.draw = Painter()
         self.world = World()
+        self.campaign = Campaign()
         self.effects = Effects()
         self.keys = set()
         self.pressed = set()
@@ -57,7 +59,18 @@ class App:
             else:
                 self.screen = 'menu'
         if p.SDLK_RETURN in self.pressed:
-            self.screen = 'play'
+            if self.screen == 'complete':
+                self.world = World()
+                self.screen = 'menu'
+            elif self.screen == 'play' and self.world.result == 'clear':
+                next_room = self.campaign.advance(self.world)
+                if next_room is None:
+                    self.screen = 'complete'
+                else:
+                    self.world = next_room
+                    self.effects = Effects()
+            else:
+                self.screen = 'play'
         if p.SDLK_r in self.pressed:
             self.world = World(self.world.index)
             self.effects = Effects()
@@ -82,10 +95,14 @@ class App:
             self.effects.draw(self.draw)
             draw_hud(self.draw, self.world)
             draw_context(self.draw, self.world, self.mouse)
-            if self.world.result:
+            if self.screen == 'complete':
+                total = sum(r['time'] for r in self.campaign.records.values())
+                panel(self.draw, '세 방 탈출 성공!', f'총 기록 {total:.1f}초. Enter: 시작 화면 / R: 마지막 방 재도전')
+            elif self.world.result:
                 panel(self.draw,
                       '방 탈출 성공!' if self.world.result == 'clear' else '본체가 쓰러졌어!',
-                      'R을 눌러 현재 방을 다시 플레이할 수 있어.')
+                      'Enter: 다음 방 / R: 현재 방 재도전' if self.world.result == 'clear'
+                      else 'R을 눌러 현재 방을 다시 플레이할 수 있어.')
         if self.help:
             draw_help(self.draw)
         p.update_canvas()
