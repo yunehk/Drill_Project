@@ -6,6 +6,7 @@ from .drawing import Painter, BG
 from .view import draw_world, draw_menu
 from .ui import draw_hud, panel
 from .effects import Effects
+from .help_view import draw_help
 
 WIDTH, HEIGHT = 1100, 780
 
@@ -21,6 +22,7 @@ class App:
         self.screen = 'menu'
         self.running = True
         self.clock = 0
+        self.help = False
 
     def event(self, event):
         if event.type == p.SDL_QUIT:
@@ -41,6 +43,13 @@ class App:
 
     def update(self, dt):
         self.clock += dt
+        if p.SDLK_h in self.pressed:
+            self.help = not self.help
+        if self.help:
+            if p.SDLK_RETURN in self.pressed:
+                self.help = False
+            self.pressed.clear()
+            return
         if p.SDLK_ESCAPE in self.pressed:
             if self.screen == 'menu':
                 self.running = False
@@ -75,6 +84,8 @@ class App:
                 panel(self.draw,
                       '방 탈출 성공!' if self.world.result == 'clear' else '본체가 쓰러졌어!',
                       'R을 눌러 현재 방을 다시 플레이할 수 있어.')
+        if self.help:
+            draw_help(self.draw)
         p.update_canvas()
 
 
