@@ -9,6 +9,7 @@ from .effects import Effects
 from .help_view import draw_help
 from .hints import draw_context
 from .campaign import Campaign
+from .audio import Audio
 
 WIDTH, HEIGHT = 1100, 780
 
@@ -18,6 +19,7 @@ class App:
         self.draw = Painter()
         self.world = World()
         self.campaign = Campaign()
+        self.audio = Audio()
         self.effects = Effects()
         self.keys = set()
         self.pressed = set()
@@ -49,6 +51,8 @@ class App:
 
     def update(self, dt):
         self.clock += dt
+        if p.SDLK_m in self.pressed:
+            self.audio.muted = not self.audio.muted
         if p.SDLK_h in self.pressed:
             self.help = not self.help
         if self.help:
@@ -89,6 +93,7 @@ class App:
                 p.SDLK_e in self.pressed)
             self.world.update(dt, controls)
             self.effects.receive(self.world.events)
+            self.audio.receive(self.world.events)
             self.effects.update(dt)
         self.pressed.clear()
 
