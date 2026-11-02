@@ -57,5 +57,15 @@ python -m unittest -v
 ```
 
 규칙·통행 경로·진행·재시작을 검사합니다.
+창을 띄우지 않는 화면·입력 통합 검사는 다음처럼 실행합니다.
+
+```powershell
+$env:SDL_VIDEODRIVER='dummy'
+$env:SDL_AUDIODRIVER='dummy'
+python -m unittest -v
+Remove-Item Env:SDL_VIDEODRIVER
+Remove-Item Env:SDL_AUDIODRIVER
+```
+
 `shellgame/`는 실제 게임 소스이며 자동 생성 효과음은 `.cache/`에 저장되어 Git에서 제외됩니다.
 현재는 세 방짜리 플레이 테스트용 버전이며 실제 사용자 플레이로 난이도를 조절할 예정입니다.
