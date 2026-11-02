@@ -7,6 +7,7 @@ from .view import draw_world, draw_menu
 from .ui import draw_hud, panel
 from .effects import Effects
 from .help_view import draw_help
+from .hints import draw_context
 
 WIDTH, HEIGHT = 1100, 780
 
@@ -80,6 +81,7 @@ class App:
             draw_world(self.draw, self.world, self.mouse)
             self.effects.draw(self.draw)
             draw_hud(self.draw, self.world)
+            draw_context(self.draw, self.world, self.mouse)
             if self.world.result:
                 panel(self.draw,
                       '방 탈출 성공!' if self.world.result == 'clear' else '본체가 쓰러졌어!',
