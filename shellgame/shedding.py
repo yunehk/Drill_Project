@@ -1,4 +1,5 @@
 from .entities import Shell
+from .aiming import THROW_SPEED
 
 
 def shed(world):
@@ -11,7 +12,7 @@ def shed(world):
     kind = p.form
     shell = Shell(kind, p.x, p.y)
     if kind == 1:
-        shell.vx, shell.vy = p.facing[0] * 680, p.facing[1] * 680
+        shell.vx, shell.vy = p.facing[0] * THROW_SPEED, p.facing[1] * THROW_SPEED
         shell.flying = True
         world.say('던진 갑옷을 조준하고 E: 그 자리로 돌진해서 합체!')
     else:

@@ -1,5 +1,6 @@
 import math
 from .geometry import clear_at, distance
+from .aiming import displacement, DRAG, STOP_SPEED, SHELL_RADIUS, HIT_RADIUS
 
 
 def update_shells(world, dt):
@@ -9,9 +10,10 @@ def update_shells(world, dt):
             continue
         steps = max(1, math.ceil(math.hypot(shell.vx, shell.vy) * dt / 4))
         for _ in range(steps):
-            nx = shell.x + shell.vx * dt / steps
-            ny = shell.y + shell.vy * dt / steps
-            if not clear_at(nx, ny, 17, world.walls):
+            dx, dy = displacement(shell.vx, shell.vy, dt / steps)
+            nx = shell.x + dx
+            ny = shell.y + dy
+            if not clear_at(nx, ny, SHELL_RADIUS, world.walls):
                 shell.flying = False
                 world.emit('wall', shell.x, shell.y)
                 break
@@ -22,7 +24,7 @@ def update_shells(world, dt):
                 world.say('스위치 작동! 초록 문이 열렸어.')
                 world.emit('switch', *switch)
             hit = next((e for e in world.enemies if e.hp > 0 and
-                        distance((nx, ny), (e.x, e.y)) < 35), None)
+                        distance((nx, ny), (e.x, e.y)) < HIT_RADIUS), None)
             if hit:
                 hit.hp -= 2
                 hit.stun = 1.2
@@ -31,9 +33,10 @@ def update_shells(world, dt):
                 world.stats['hits'] += 1
                 world.emit('enemy', hit.x, hit.y)
                 break
-        shell.vx *= math.exp(-1.7 * dt)
-        shell.vy *= math.exp(-1.7 * dt)
-        if math.hypot(shell.vx, shell.vy) < 100:
+            decay = math.exp(-DRAG * dt / steps)
+            shell.vx *= decay
+            shell.vy *= decay
+        if math.hypot(shell.vx, shell.vy) < STOP_SPEED:
             shell.flying = False
         if not shell.flying:
             shell.vx = shell.vy = 0

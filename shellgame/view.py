@@ -1,8 +1,9 @@
-from .drawing import BG, CYAN, GOLD, MUTED, WHITE
+from .drawing import BG, CYAN, GOLD, MUTED, WHITE, RED, GREEN
 from .characters import armor, monster, enemy
 from .room_view import draw_room
 from .ui import draw_hud
 from .equipment import candidates
+from .aiming import aim, preview
 
 
 def draw_world(draw, world, mouse):
@@ -20,9 +21,17 @@ def draw_world(draw, world, mouse):
         enemy(draw, entity, world.time)
     monster(draw, p, world.time)
     if p.form == 1 and p.dash is None:
-        dx, dy = p.facing
-        for length in range(38, 145, 15):
-            draw.circle(p.x+dx*length, p.y+dy*length, 2, GOLD)
+        direction, target = aim(world, mouse)
+        points, end, hit = preview(world, direction)
+        color = GREEN if target else GOLD
+        for x, y in points[2:]:
+            draw.circle(x, y, 2, color)
+        draw.circle(*end, 17, RED if hit == 'wall' else color, False)
+        if target:
+            kind, obj = target
+            tx, ty = (obj.x, obj.y) if kind == 'enemy' else obj
+            draw.circle(tx, ty, 28, GREEN, False)
+            draw.text(tx-30, ty+43, '조준 보정', GREEN, 14)
     draw.circle(*mouse, 7, CYAN, False)
     draw.line(mouse[0]-12, mouse[1], mouse[0]+12, mouse[1], CYAN)
     draw.line(mouse[0], mouse[1]-12, mouse[0], mouse[1]+12, CYAN)

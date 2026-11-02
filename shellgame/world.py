@@ -10,6 +10,7 @@ from .turrets import update_turrets
 from .combat import update_bullets
 from .enemies import update_enemies
 from .objectives import update_objectives
+from .aiming import aim
 
 
 class World:
@@ -57,6 +58,8 @@ class World:
         p.cooldown = max(0, p.cooldown - dt)
         p.invincible = max(0, p.invincible - dt)
         p.facing = unit(controls.aim[0] - p.x, controls.aim[1] - p.y)
+        if p.form == 1:
+            p.facing, _ = aim(self, controls.aim)
         if controls.shed:
             shed(self)
         if controls.equip:
