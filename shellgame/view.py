@@ -1,5 +1,5 @@
 from .drawing import BG, CYAN, GOLD, MUTED, WHITE, RED, GREEN
-from .characters import armor, monster, enemy
+from .characters import armor, flying_armor, monster, enemy
 from .room_view import draw_room
 from .ui import draw_hud
 from .equipment import candidates
@@ -13,7 +13,10 @@ def draw_world(draw, world, mouse):
         if shell in available:
             draw.circle(shell.x, shell.y, 39 if shell.kind == 2 else 29, CYAN, False)
             draw.text(shell.x-8, shell.y+49, 'E', CYAN, 20)
-        armor(draw, shell.x, shell.y, shell.kind, True, shell.hit_flash > 0)
+        if shell.flying:
+            flying_armor(draw, shell)
+        else:
+            armor(draw, shell.x, shell.y, shell.kind, True, shell.hit_flash > 0)
     p = world.player
     if p.dash:
         draw.line(p.x, p.y, p.dash.x, p.dash.y, CYAN)

@@ -13,6 +13,10 @@ def draw_room(draw, world):
         draw.rect(x, y, w, h, (65, 87, 102))
         draw.rect(x, y+h-5, w, 5, (105, 131, 142))
     gate = world.room['gate']
+    if world.index == 0:
+        draw.text(330, 432, '작은 몸 / 투척 갑옷 통과 →', CYAN, 14)
+        draw.line(532, 390, 552, 390, CYAN)
+        draw.line(608, 390, 628, 390, CYAN)
     if gate:
         x, y, w, h = gate
         color = GREEN if world.gate_open else RED

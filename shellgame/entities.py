@@ -29,6 +29,7 @@ class Shell:
     vy: float = 0
     flying: bool = False
     hit_flash: float = 0
+    safe_pos: object = None
 
 
 @dataclass

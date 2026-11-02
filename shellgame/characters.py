@@ -1,4 +1,5 @@
 import math
+from .geometry import unit
 from .drawing import CYAN, ORANGE, GOLD, WHITE, RED, BG
 
 
@@ -16,6 +17,16 @@ def armor(draw, x, y, kind, hollow=False, flash=False):
         draw.circle(x, y-5, radius*.49, BG)
         draw.line(x-5, y+radius-4, x+1, y+9, BG)
         draw.line(x+1, y+9, x-3, y+2, BG)
+
+
+def flying_armor(draw, shell):
+    dx, dy = unit(shell.vx, shell.vy)
+    x, y = shell.x, shell.y
+    draw.line(x-dx*27, y-dy*27, x, y, (145, 105, 55))
+    for offset in range(-4, 5):
+        draw.line(x-dx*11-dy*offset, y-dy*11+dx*offset,
+                  x+dx*11-dy*offset, y+dy*11+dx*offset, GOLD)
+    draw.circle(x, y, 3, WHITE)
 
 
 def monster(draw, player, clock):

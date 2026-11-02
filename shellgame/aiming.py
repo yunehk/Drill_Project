@@ -5,7 +5,9 @@ from .geometry import unit, distance, clear_path, clear_at
 THROW_SPEED = 820
 DRAG = 1.7
 STOP_SPEED = 100
-SHELL_RADIUS = 17
+# A thrown shell turns edge-on. Worn armor still needs a radius of 17.
+SHELL_RADIUS = 8
+REST_RADIUS = 17
 HIT_RADIUS = 35
 MAX_DISTANCE = (THROW_SPEED - STOP_SPEED) / DRAG
 
@@ -37,12 +39,19 @@ def displacement(vx, vy, dt):
     return vx*factor, vy*factor
 
 
+def landing_point(x, y, safe_pos, walls):
+    if clear_at(x, y, REST_RADIUS, walls) or safe_pos is None:
+        return x, y
+    return safe_pos
+
+
 def preview(world, direction):
     """Same radius, drag and collision order as the live thrown shell."""
     x, y = world.player.x, world.player.y
     vx, vy = direction[0]*THROW_SPEED, direction[1]*THROW_SPEED
     points = [(x, y)]
     travelled = 0
+    safe_pos = (x, y) if clear_at(x, y, REST_RADIUS, world.walls) else None
     while math.hypot(vx, vy) >= STOP_SPEED:
         step = min(.008, math.log(math.hypot(vx, vy)/STOP_SPEED)/DRAG)
         if step < .000001:
@@ -50,8 +59,10 @@ def preview(world, direction):
         dx, dy = displacement(vx, vy, step)
         nx, ny = x+dx, y+dy
         if not clear_at(nx, ny, SHELL_RADIUS, world.walls):
-            return points, (x, y), 'wall'
+            return points, landing_point(x, y, safe_pos, world.walls), 'wall'
         x, y = nx, ny
+        if clear_at(x, y, REST_RADIUS, world.walls):
+            safe_pos = (x, y)
         travelled += math.hypot(dx, dy)
         if travelled >= 16:
             points.append((x, y))
@@ -65,4 +76,4 @@ def preview(world, direction):
             points.append((x, y))
         decay = math.exp(-DRAG*step)
         vx, vy = vx*decay, vy*decay
-    return points, (x, y), 'end'
+    return points, landing_point(x, y, safe_pos, world.walls), 'end'
