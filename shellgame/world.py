@@ -6,6 +6,7 @@ from .movement import move_player
 from .shedding import shed
 from .shells import update_shells
 from .equipment import equip, update_equip
+from .turrets import update_turrets
 
 
 class World:
@@ -59,3 +60,4 @@ class World:
         move_player(self, controls.dx, controls.dy, dt)
         update_shells(self, dt)
         update_equip(self, dt)
+        update_turrets(self, dt)
