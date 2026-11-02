@@ -4,7 +4,7 @@ from .geometry import clear_at, distance
 
 def damage(world, amount=1):
     p = world.player
-    if p.invincible > 0 or p.dash or world.result:
+    if world.practice or p.invincible > 0 or p.dash or world.result:
         return False
     p.hp -= amount
     p.invincible = 1.15

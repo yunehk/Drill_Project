@@ -25,6 +25,7 @@ class World:
         self.key = False
         self.gate_open = self.room['gate'] is None
         self.result = None
+        self.practice = False
         self.events = []
         self.message = self.room['hint']
         self.message_time = 7.0

@@ -13,7 +13,8 @@ def draw_hud(draw, world):
     draw.text(185, 720, FORM_NAMES[p.form], ORANGE if p.form else CYAN, 17)
     draw.text(735, 720, '열쇠 획득' if world.key else '목표: 열쇠 → 출구', GREEN if world.key else GOLD, 17)
     draw.text(32, 82, 'WASD 이동   마우스 조준   Space 탈피/투척   E 갑옷 합체', WHITE, 20)
-    draw.text(32, 48, 'R 현재 방 재시작   Esc 일시정지   H 도움말', MUTED, 17)
+    draw.text(32, 48, 'R 재시작   Esc 정지   H 도움말   M 음소거', MUTED, 17)
+    draw.text(930, 752, '연습' if world.practice else '일반', GOLD if world.practice else MUTED, 17)
     if world.message_time > 0:
         draw.rect(45, 130, 1010, 34, (12, 25, 35))
         draw.text(58, 151, world.message, GOLD, 17)

@@ -40,4 +40,5 @@ def draw_menu(draw, clock):
             draw.text(x+115, 412, '→', MUTED, 26)
     draw.text(235, 240, 'Enter / 클릭 : 시작하기', CYAN, 26)
     draw.text(235, 185, 'E로 벗어놓은 갑옷에 날아가 합체할 수 있어.', WHITE, 20)
-    draw.text(235, 145, '세 방을 통과해 보자. Esc: 종료', MUTED, 17)
+    draw.text(235, 145, '1 / 2 / 3: 방 선택   F2: 무적 연습 모드   F4: 화면 흔들림', MUTED, 17)
+    draw.text(235, 110, '게임 중 H: 도움말   Esc: 일시정지   M: 음소거', MUTED, 17)

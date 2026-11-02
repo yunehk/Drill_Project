@@ -31,6 +31,7 @@ class App:
         self.clock = 0
         self.help = False
         self.paused = False
+        self.practice = False
 
     def event(self, event):
         if event.type == p.SDL_QUIT:
@@ -57,6 +58,14 @@ class App:
             self.audio.muted = not self.audio.muted
         if p.SDLK_F4 in self.pressed:
             self.camera.enabled = not self.camera.enabled
+        if p.SDLK_F2 in self.pressed:
+            self.practice = not self.practice
+        if self.screen == 'menu':
+            for key, index in ((p.SDLK_1, 0), (p.SDLK_2, 1), (p.SDLK_3, 2)):
+                if key in self.pressed:
+                    self.world = World(index)
+                    self.effects = Effects()
+                    self.screen = 'play'
         if p.SDLK_h in self.pressed:
             self.help = not self.help
         if self.help:
@@ -90,6 +99,7 @@ class App:
             self.screen = 'play'
             self.paused = False
         if self.screen == 'play' and not self.paused:
+            self.world.practice = self.practice
             controls = Controls(
                 int(p.SDLK_d in self.keys)-int(p.SDLK_a in self.keys),
                 int(p.SDLK_w in self.keys)-int(p.SDLK_s in self.keys),
