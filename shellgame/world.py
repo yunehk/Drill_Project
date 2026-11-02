@@ -3,6 +3,7 @@ from .entities import Player, Enemy, Turret
 from .levels import ROOMS, BOUNDS
 from .geometry import unit
 from .movement import move_player
+from .shedding import shed
 
 
 class World:
@@ -49,4 +50,6 @@ class World:
         p.cooldown = max(0, p.cooldown - dt)
         p.invincible = max(0, p.invincible - dt)
         p.facing = unit(controls.aim[0] - p.x, controls.aim[1] - p.y)
+        if controls.shed:
+            shed(self)
         move_player(self, controls.dx, controls.dy, dt)
