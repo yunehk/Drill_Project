@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 import math
 import random
 from .geometry import unit, distance, clear_at, clear_path, circle_rect
+from .takeover_levels import STAGES
 
 W, H = 1100, 780
 BOUNDS = (48, 148, 1004, 498)
@@ -67,12 +68,18 @@ class Particle:
     color: tuple
 
 class Arena:
-    def __init__(self, practice=False):
+    def __init__(self, practice=False, stage=2):
+        if stage not in range(len(STAGES)): raise ValueError("Invalid stage")
+        self.stage_index = stage
+        self.level = STAGES[stage]
+        self.solids = list(self.level.solids)
+        self.spawns = {kind:(x,y) for kind,x,y in self.level.spawns}
+        self.required_bodies = set(self.spawns)
         self.x, self.y = 295., 390.
         self.hp = 5
         self.host = None
-        self.machines = {k: Machine(k, *p) for k, p in SPAWNS.items()}
-        self.machines['gun'].timer = 2.9
+        self.machines = {k: Machine(k, *p) for k, p in self.spawns.items()}
+        if 'gun' in self.machines: self.machines['gun'].timer = 4.0 if stage == 1 else 2.9
         self.time = 0.
         self.practice = practice
         self.result = None
@@ -91,7 +98,7 @@ class Arena:
         self.flash = 0.
         self.message = '붉은 돌진 로봇을 벽으로 유도하세요'
         self.message_time = 4.
-        self.turret_timer = 5.
+        self.turret_timer = self.level.turret_delay
         self.turret_aim = None
         self.stats = {'hits': 0, 'swaps': 0, 'shots': 0, 'dodges': 0}
         self.rng = random.Random(12)
@@ -103,11 +110,20 @@ class Arena:
     def radius(self): return 11. if self.host is None else 25.
 
     @property
-    def walls(self): return SOLIDS + (GATE_OPEN if self.gate_open else [GATE])
+    def walls(self): return self.solids + (GATE_OPEN if self.gate_open else [GATE])
+
+    @property
+    def laser_state(self):
+        if not self.level.laser: return "off"
+        phase = self.time % 4
+        return "active" if 2.4 <= phase < 3.4 else "warning" if 1.8 <= phase < 2.4 else "off"
 
     @property
     def objective(self):
         if 'ram' not in self.boarded: return '01', '돌진을 벽으로 유도 → 기절한 몸에 E로 탑승'
+        if self.level.gate_weapon == 'ram':
+            if not self.gate_open: return '02', '돌진형으로 주황색 균열벽에 돌진'
+            return '03', 'E로 하차 → 오른쪽 좁은 틈 → 초록 출구'
         if 'gun' not in self.boarded: return '02', '돌진으로 포격형의 장갑 파괴 → E로 갈아타기'
         if not self.gate_open: return '03', '포격형으로 오른쪽 주황색 차단벽을 포격'
         return '04', 'E로 하차 → 오른쪽 좁은 틈 → 초록 출구'
@@ -234,7 +250,7 @@ class Arena:
         x, y = shot.target
         self.emit('impact', x, y)
         if shot.team == 'player':
-            if not self.gate_open and circle_rect(x, y, 90, GATE):
+            if self.level.gate_weapon == 'gun' and not self.gate_open and circle_rect(x, y, 90, GATE):
                 self.gate_open = True
                 self.emit('break', 868, 390, '차단벽 파괴! 하차한 뒤 오른쪽 틈으로 탈출하세요')
             for m in self.machines.values():
@@ -288,6 +304,11 @@ class Arena:
             if m.state == 'dash':
                 m.timer -= dt
                 ok = self.move(m, m.direction[0]*820*dt, m.direction[1]*820*dt, m.radius)
+                if (self.level.gate_weapon == 'ram' and not self.gate_open and
+                    circle_rect(m.x+m.direction[0]*8, m.y+m.direction[1]*8, m.radius, GATE)):
+                    self.gate_open = True
+                    self.emit('break',868,390,'균열벽 돌파! 하차한 뒤 작은 틈으로 탈출하세요')
+                    m.timer = 0
                 for other in self.machines.values():
                     if other is not m and other.state not in ('wreck', 'piloted', 'stun', 'empty') and distance(m.pos, other.pos) < 57:
                         other.armor = False
@@ -315,10 +336,12 @@ class Arena:
                       uy*(570 if self.dodge_time>0 else 265)*dt, 11)
         self._enemies(dt)
         self._projectiles(dt)
-        if (self.gate_open and {'ram','gun'} <= self.boarded and self.host is None
+        if self.laser_state == 'active' and circle_rect(self.x,self.y,self.radius,self.level.laser):
+            self.hurt()
+        if (self.gate_open and self.required_bodies <= self.boarded and self.host is None
                 and self.x > 1015 and 350 < self.y < 430):
             self.result = 'clear'
-            self.emit('clear', message='탈출 성공! 두 몸의 능력으로 길을 열었습니다')
+            self.emit('clear', message='스테이지 클리어! Enter로 다음 방 / R로 재도전')
 
     def _enemies(self, dt):
         for m in self.machines.values():
@@ -326,7 +349,7 @@ class Arena:
             if m.state == 'wreck':
                 m.respawn -= dt
                 if m.respawn <= 0:
-                    m.x,m.y = SPAWNS[m.kind];m.hp=4;m.state='stun';m.timer=6.
+                    m.x,m.y = self.spawns[m.kind];m.hp=4;m.state='stun';m.timer=6.
                     self.emit('key', *m.pos, message='대체 기체가 도착했습니다. E로 탑승 가능')
                 continue
             if m.state == 'empty': continue
@@ -358,11 +381,12 @@ class Arena:
                     self.fire(m.pos,m.direction,'enemy','gun',True)
                     m.state='idle';m.timer=3.4
         # Independent fixed turret keeps exchange windows meaningful.
+        if not self.level.turret_interval: return
         self.turret_timer -= dt
         if self.turret_timer < .7 and self.turret_aim is None:self.turret_aim=self.pos
         if self.turret_timer <= 0:
             self.fire((705,185),self.turret_aim or self.pos,'enemy','turret')
-            self.turret_timer=3.0;self.turret_aim=None
+            self.turret_timer=self.level.turret_interval;self.turret_aim=None
 
     def _projectiles(self, dt):
         alive=[]

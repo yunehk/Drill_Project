@@ -79,7 +79,7 @@ def arena(d,w,aim):
     for x in range(60,1040,28):
         d.line(x,143,x+8,148,ORANGE)
         d.line(x,647,x+8,652,(72,92,104))
-    for wall in SOLIDS:
+    for wall in w.solids:
         x,y,b,h=wall;d.rect(x,y,b,h,(41,57,72));d.rect(x,y,b,h,(88,111,129),False)
         for yy in range(y+12,int(y+h),22):d.line(x+4,yy,x+b-4,yy,(57,79,94))
     gates=GATE_OPEN if w.gate_open else [GATE]
@@ -87,7 +87,7 @@ def arena(d,w,aim):
         d.rect(x,y,b,h,(74,48,35));d.rect(x,y,b,h,ORANGE,False)
         for yy in range(y+10,int(y+h),24):d.line(x+2,yy,x+b-2,yy+10,ORANGE)
     if not w.gate_open:
-        d.text(773,680,'포격으로 차단벽 파괴',ORANGE,17)
+        d.text(773,680,'돌진으로 균열벽 파괴' if w.level.gate_weapon == 'ram' else '포격으로 차단벽 파괴',ORANGE,17)
         dotted(d,(868,655),(868,635),ORANGE)
     else:d.text(820,390,'OPEN',CYAN,17)
     # Exit and narrow body-only passage.
@@ -95,8 +95,20 @@ def arena(d,w,aim):
     d.text(1008,390,'출구',GREEN,14)
     d.text(933,440,'본체만',MUTED,14)
     # Independent turret telegraph.
-    d.circle(705,185,23,(53,47,63));ring(d,705,185,23,RED)
-    d.circle(705,185,9,RED)
+    if w.level.turret_interval:
+        d.circle(705,185,23,(53,47,63));ring(d,705,185,23,RED)
+        d.circle(705,185,9,RED)
+    if w.level.laser:
+        lx,ly,lw,lh=w.level.laser
+        color=RED if w.laser_state=='active' else GOLD if w.laser_state=='warning' else (45,65,79)
+        d.rect(lx,ly,lw,lh,color,False)
+        for yy in range(ly,ly+lh,14):
+            d.line(lx+lw/2-2,yy,lx+lw/2+2,yy+8,color)
+        if w.laser_state=='active':
+            d.rect(lx+8,ly,8,lh,RED)
+            d.text(lx-26,ly+lh+20,'작동 중!',RED,17)
+        elif w.laser_state=='warning':d.text(lx-30,ly+lh+20,'레이저 예고',GOLD,17)
+        else:d.text(lx-30,ly+lh+20,'주기 레이저',MUTED,14)
     if w.turret_aim:
         dotted(d,(705,185),w.turret_aim,RED)
         ring(d,*w.turret_aim,19,RED)
@@ -153,7 +165,7 @@ def arena(d,w,aim):
 def hud(d,w,paused=False,help_open=False,muted=False,shake=True):
     d.offset=(0,0)
     d.text(40,742,'SHELLBOUND',CYAN,38)
-    d.text(40,702,'BODY TAKEOVER  /  2차 발표 플레이 빌드',MUTED,14)
+    d.text(40,702,f'STAGE {w.stage_index+1}/3  /  {w.level.name}',CYAN,17)
     form={'ram':'돌진형 · 방향 고정 돌진','gun':'포격형 · 착탄 위치 예측'}.get(w.host,'작은 본체 · 빠른 이동 / 스텝')
     d.text(465,741,form,WHITE,20)
     d.text(465,710,'본체',MUTED,14)
@@ -183,11 +195,11 @@ def menu(d,t):
     d.text(72,656,'SHELLBOUND',CYAN,58)
     d.text(74,603,'적의 몸을 빼앗아 길을 여는 액션 퍼즐',WHITE,26)
     d.text(74,551,'피하고 → 탈취하고 → 돌파하라',ORANGE,26)
-    d.text(74,475,'01  돌진을 벽으로 유도하고 기절한 적에 탑승',WHITE,20)
-    d.text(74,432,'02  돌진형으로 포격형을 공격해 몸을 갈아타기',WHITE,20)
-    d.text(74,389,'03  포격으로 차단벽을 부수고 작은 몸으로 탈출',WHITE,20)
+    d.text(74,475,'01  탈취의 시작 — 돌진형 탈취와 균열벽 돌파',WHITE,20)
+    d.text(74,432,'02  몸 바꾸기 — 포격형으로 교체해 차단벽 파괴',WHITE,20)
+    d.text(74,389,'03  교차 사격 — 포탑과 주기 레이저를 피해 탈출',WHITE,20)
     d.text(74,290,'Enter  실전 시작',CYAN,26)
-    d.text(74,245,'P  피해 없는 연습 시작',GOLD,20)
+    d.text(74,245,'P  연습 시작    1 / 2 / 3  원하는 스테이지 선택',GOLD,20)
     d.text(74,175,'WASD 이동 · 마우스 조준 · Space 공격/스텝 · E 탑승/하차',MUTED,17)
     d.text(74,140,'F2 연습 모드   H 도움말   Esc 종료',MUTED,17)
     d.text(74,70,'기존 탈피 퍼즐: python main.py --classic',MUTED,14)

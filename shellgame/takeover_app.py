@@ -3,6 +3,7 @@ import math
 import time
 import pico2d as p
 from .takeover import Arena, Input, W, H
+from .takeover_levels import STAGES
 from .drawing import Painter
 from .runtime import ensure_renderer
 from .pointer import current_pointer, logical_pointer
@@ -14,15 +15,17 @@ class TakeoverApp:
         ensure_renderer()
         self.draw=Painter()
         self.audio=Audio()
-        self.world=Arena()
+        self.world=Arena(stage=0)
+        self.completed={}
         self.keys=set();self.pressed=set()
         self.aim=(745,505)
         self.click=False
         self.screen='menu';self.paused=False;self.help=False
         self.running=True;self.shake=True;self.clock=0
 
-    def start(self,practice=False):
-        self.world=Arena(practice)
+    def start(self,practice=False,stage=0):
+        self.completed={}
+        self.world=Arena(practice,stage)
         self.screen='play';self.paused=False;self.help=False
 
     def event(self,event):
@@ -50,9 +53,18 @@ class TakeoverApp:
         if self.screen=='menu':
             if p.SDLK_RETURN in self.pressed:self.start()
             elif p.SDLK_p in self.pressed:self.start(True)
-        elif p.SDLK_r in self.pressed:self.start(self.world.practice)
+            else:
+                for index,key in enumerate((p.SDLK_1,p.SDLK_2,p.SDLK_3)):
+                    if key in self.pressed:self.start(stage=index)
+        elif p.SDLK_r in self.pressed:
+            self.world=Arena(self.world.practice,self.world.stage_index)
+            self.paused=False;self.help=False
         elif p.SDLK_RETURN in self.pressed:
-            if self.world.result:self.screen='menu';self.paused=False
+            if self.world.result == 'clear' and self.world.stage_index < len(STAGES)-1:
+                self.completed[self.world.stage_index] = self.world.time
+                self.world=Arena(self.world.practice,self.world.stage_index+1)
+                self.paused=False;self.help=False
+            elif self.world.result:self.screen='menu';self.paused=False
             elif self.paused:self.paused=False
         if p.SDLK_F2 in self.pressed:self.world.practice=not self.world.practice
         if self.screen=='play' and not self.paused and not self.help and not self.world.result:
@@ -76,10 +88,13 @@ class TakeoverApp:
             view.hud(d,self.world,self.paused,self.help,self.audio.muted,self.shake)
             if self.world.result:
                 clear=self.world.result=='clear'
-                view.panel(d,'탈출 성공!' if clear else '본체가 쓰러졌습니다',[
+                final = self.world.stage_index == len(STAGES)-1
+                title = ('3스테이지 탈출 성공!' if {0,1} <= set(self.completed) else '최종 스테이지 클리어!') if final else '스테이지 클리어!'
+                view.panel(d,title if clear else '본체가 쓰러졌습니다',[
                     f'기록 {self.world.time:.1f}초 · 몸 탈취 {self.world.stats["swaps"]}회 · 피격 {self.world.stats["hits"]}회',
                     '연습 모드 기록 (피해 없음)' if self.world.practice else '실전 모드 기록',
-                    'R  다시 도전     Enter  시작 화면'])
+                    'R  현재 방 재도전    Enter  다음 스테이지' if clear and not final else 'R  현재 방 재도전    Enter  시작 화면',
+                    f'현재 방 {self.world.stage_index+1}/3 · 누적 {sum(self.completed.values())+self.world.time:.1f}초'])
             elif self.paused:view.panel(d,'일시정지',['Esc / Enter  계속하기','R  현재 방 재시작','H  도움말'])
         if self.help:view.panel(d,'조작과 몸 탈취',[
             'WASD 이동 · 본체 상태 Space: 짧은 스텝 (무적 없음)',

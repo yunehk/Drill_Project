@@ -7,7 +7,7 @@ slides and a native table. No python-pptx. Preview renderer reads final slide XM
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 import xml.etree.ElementTree as E
-import re, sys, posixpath
+import re, sys, posixpath, os
 
 ROOT=Path(__file__).resolve().parent.parent
 OUT=ROOT/'presentation'/'second'
@@ -105,7 +105,7 @@ def main():
  text(tr,4,60,205,530,50,'핵심 플레이',30,'4BE3D2',True)
  text(tr,5,60,260,530,160,'공격을 피해서 기절 유도\n작은 본체로 적의 몸 탈취\n능력을 사용하고 다른 몸으로 교체',27)
  text(tr,6,60,445,530,47,'이번 구현',30,'4BE3D2',True)
- text(tr,7,60,500,530,120,'돌진형 · 포격형 2종 / 전투방 1개\n돌진 → 장갑 파괴 → 포격 → 탈출',25)
+ text(tr,7,60,500,530,120,'돌진형 · 포격형 2종 / 3스테이지\n탈취 학습 → 몸 교체 → 교차 사격',25)
  picture(tr,8,620,205,600,425.455)
  text(tr,9,620,645,600,30,'실제 게임 렌더러 캡처 · 임시 도형 그래픽',19,'859CB2')
  text(tr,10,60,680,1100,30,'윤형균  /  2023184021                                            2차 프로젝트 발표  ·  01',19,'859CB2')
@@ -121,18 +121,18 @@ def main():
  text(tr,3,60,119,1160,50,'기획 변경: 자기 갑옷 회수 퍼즐 → 적의 몸 탈취 액션 퍼즐',27)
  rows=[['1차 일정','계획','현재 구현 / 확인','상태'],
  ['1주차','조준·입력·충돌 개선','기존 투척 유지 + 새 탑승·하차\n돌진 충돌·포격 착탄 판정 검증','해당 기능 완료'],
- ['2주차','세 방의 레벨 디자인','기존 세 방 유지 / 신규 전투방 1개\n전체 신규 캠페인은 미구현','부분 진행'],
- ['3주차','캐릭터 이미지·연출','공격 예고·기절·파편·효과음\n최종 캐릭터 이미지는 미적용','부분 진행'],
- ['4주차','플레이 테스트·마무리','규칙·UI 자동 검사 / 진행 경로 검증\n사용자 플레이·난이도 튜닝 예정','부분 진행']]
+ ['2주차','세 방의 레벨 디자인','신규 3스테이지 / 순차 진행 구현\n방별 재시작·원하는 방 선택 지원','부분 진행'],
+ ['3주차','캐릭터 이미지·연출','공격 예고·기절·주기 레이저 연출\n최종 캐릭터 이미지는 미적용','부분 진행'],
+ ['4주차','플레이 테스트·마무리','3스테이지 일반 모드 클리어 검증\n사용자 플레이·난이도 튜닝 예정','부분 진행']]
  native_table(tr,rows)
  text(tr,4,60,600,1160,35,'다음: 직접 플레이 검증 → 자석형·거미형 상호작용 → 최대 8스테이지',24,'4BE3D2')
- text(tr,5,60,642,1160,30,'현재 범위는 2종·1방 프로토타입이며, 확장 개체와 최종 아트는 향후 계획',22,'859CB2')
+ text(tr,5,60,642,1160,30,'현재 범위는 2종·3스테이지 프로토타입이며, 확장 개체와 최종 아트는 향후 계획',22,'859CB2')
  text(tr,6,60,680,1160,28,'윤형균  /  2023184021                                           2차 프로젝트 발표  ·  02',19,'859CB2')
  files['ppt/slides/slide2.xml']=xml(s)
  # Keep original valid note infrastructure, replace body text completely.
  notes=[
  '게임 설명. 실제 구현: shellgame/takeover.py, takeover_app.py, takeover_view.py. 캡처는 SDL dummy 드라이버로 실제 게임 렌더러를 실행해 저장한 QA 화면이며 사람의 직접 플레이 녹화가 아님. 기존 세 방은 --classic. 자석형/거미형/8스테이지는 미구현. 발표자 윤형균 2023184021.',
- '1차 계획 출처: presentation/기획서.pptx 14번 슬라이드. 발표 요구사항 출처: C:/Users/yuneh/Downloads/2026_2DGP_2차발표가이드.pdf. 주차는 1차 기획의 상대 주차이며 완료일을 소급 주장하지 않음. 기존 게임과 새 몸 탈취 방은 별도 모드. 현재는 자동 검증과 임시 그래픽이며 재미, 최종 난이도와 아트는 미완료.']
+ '1차 계획 출처: presentation/기획서.pptx 14번 슬라이드. 발표 요구사항 출처: C:/Users/yuneh/Downloads/2026_2DGP_2차발표가이드.pdf. 주차는 1차 기획의 상대 주차이며 완료일을 소급 주장하지 않음. 기존 게임과 새 몸 탈취 3스테이지는 별도 모드. 현재는 자동 검증과 임시 그래픽이며 재미, 최종 난이도와 아트는 미완료.']
  for i,note in enumerate(notes,1):
   key=f'ppt/notesSlides/notesSlide{i}.xml'
   if key not in files:continue
@@ -156,7 +156,7 @@ def main():
 
 def render_preview(path):
  # XML-driven layout preview. Text/table content stays editable in delivered PPTX.
- sys.path.insert(0,str(ROOT.parent/'.video_deps'))
+ sys.path.insert(0,os.environ.get('SHELLBOUND_DEV_DEPS',str(ROOT.parent/'.video_deps')))
  from PIL import Image,ImageDraw,ImageFont
  fonts={}
  def font(px):
