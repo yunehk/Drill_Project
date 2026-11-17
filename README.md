@@ -21,6 +21,7 @@ Space/왼쪽 클릭은 탑승 기체 공격(본체일 때는 이동 스텝), E�
 
 - R 재시작 / Esc 일시정지 / H 도움말 / F2 연습 전환 / F4 흔들림 / M 소리
 - [2차 발표 PPT (2장)](presentation/second/SHELLBOUND_2차발표.pptx)
+- [브라우저 전체화면 발표 파일](presentation/second/발표보기.html) — 다운로드 후 더블클릭, F 전체화면, ←/→ 이동. 글꼴·뷰어에 영향받지 않는 이미지 보기이며 PPT는 별도로 편집 가능합니다.
 - [계획 대비 구현 현황](presentation/second/구현현황.md)
 - 자동 입력 QA: `python -m tools.verify_takeover` (게임 실제 로직 검증이며 사람 플레이 영상 아님)
 

@@ -29,8 +29,17 @@ def xfrm(parent,px,py,w,h,tag='xfrm'):
  n=el(parent,q(A,tag));el(n,q(A,'off'),{'x':x(px),'y':x(py)});el(n,q(A,'ext'),{'cx':x(w),'cy':x(h)})
  return n
 def paragraph(parent,text,size,color='E7F0F5',bold=False):
- p=el(parent,q(A,'p'));props=el(p,q(A,'pPr'),{'algn':'l'})
- el(el(props,q(A,'lnSpc')),q(A,'spcPct'),{'val':'115000'})
+ # Do not inherit bullets or paragraph spacing from presentation defaults.
+ # Viewers otherwise insert bullets and extra paragraph gaps inside table cells.
+ p=el(parent,q(A,'p'));props=el(p,q(A,'pPr'),{
+     'algn':'l','marL':'0','marR':'0','indent':'0','lvl':'0'})
+ el(el(props,q(A,'lnSpc')),q(A,'spcPts'),{'val':str(round(size*75*1.15))})
+ el(el(props,q(A,'spcBef')),q(A,'spcPts'),{'val':'0'})
+ el(el(props,q(A,'spcAft')),q(A,'spcPts'),{'val':'0'})
+ el(props,q(A,'buNone'))
+ defaults=el(props,q(A,'defRPr'),{'lang':'ko-KR','sz':str(round(size*75)),'b':'1' if bold else '0'})
+ fill(defaults,color)
+ for name in ('latin','ea','cs'):el(defaults,q(A,name),{'typeface':'맑은 고딕'})
  r=el(p,q(A,'r'));rp=el(r,q(A,'rPr'),{'lang':'ko-KR','sz':str(round(size*75)),'b':'1' if bold else '0'})
  fill(rp,color)
  for name in ('latin','ea','cs'):el(rp,q(A,name),{'typeface':'맑은 고딕'})
@@ -44,7 +53,7 @@ def text(tree,id,px,py,w,h,content,size=26,color='E7F0F5',bold=False):
  pr=el(sp,q(P,'spPr'));xfrm(pr,px,py,w,h)
  el(el(pr,q(A,'prstGeom'),{'prst':'rect'}),q(A,'avLst'));el(pr,q(A,'noFill'))
  el(el(pr,q(A,'ln')),q(A,'noFill'))
- body=el(sp,q(P,'txBody'));el(body,q(A,'bodyPr'),{'wrap':'square','lIns':'0','rIns':'0','tIns':'0','bIns':'0','anchor':'t'})
+ body=el(sp,q(P,'txBody'));bp=el(body,q(A,'bodyPr'),{'wrap':'square','lIns':'0','rIns':'0','tIns':'0','bIns':'0','anchor':'t'});el(bp,q(A,'noAutofit'))
  el(body,q(A,'lstStyle'))
  for line in content.split('\n'):paragraph(body,line,size,color,bold)
 def slide():
@@ -64,14 +73,14 @@ def native_table(tree,rows):
  f=el(tree,q(P,'graphicFrame'));nv=el(f,q(P,'nvGraphicFramePr'))
  el(nv,q(P,'cNvPr'),{'id':'20','name':'1차 개발 계획 대비 진행 상황'});el(nv,q(P,'cNvGraphicFramePr'));el(nv,q(P,'nvPr'))
  xf=el(f,q(P,'xfrm'));el(xf,q(A,'off'),{'x':x(60),'y':x(190)});el(xf,q(A,'ext'),{'cx':x(1160),'cy':x(378)})
- data=el(el(f,q(A,'graphic')),q(A,'graphicData'),{'uri':A+'/table'})
+ data=el(el(f,q(A,'graphic')),q(A,'graphicData'),{'uri':'http://schemas.openxmlformats.org/drawingml/2006/table'})
  table=el(data,q(A,'tbl'));el(table,q(A,'tblPr'),{'firstRow':'1','bandRow':'0'})
  grid=el(table,q(A,'tblGrid'))
- for width in [140,290,545,185]:el(grid,q(A,'gridCol'),{'w':x(width)})
+ for width in [130,270,540,220]:el(grid,q(A,'gridCol'),{'w':x(width)})
  for i,row in enumerate(rows):
   tr=el(table,q(A,'tr'),{'h':x(50 if i==0 else 82)})
   for j,value in enumerate(row):
-   tc=el(tr,q(A,'tc'));body=el(tc,q(A,'txBody'));el(body,q(A,'bodyPr'),{'wrap':'square','anchor':'ctr'});el(body,q(A,'lstStyle'))
+   tc=el(tr,q(A,'tc'));body=el(tc,q(A,'txBody'));bp=el(body,q(A,'bodyPr'),{'wrap':'square','anchor':'ctr','lIns':'0','rIns':'0','tIns':'0','bIns':'0'});el(bp,q(A,'noAutofit'));el(body,q(A,'lstStyle'))
    for line in value.split('\n'):paragraph(body,line,23,'4BE3D2' if i==0 or j==3 else 'E7F0F5',i==0)
    props=el(tc,q(A,'tcPr'),{'marL':x(10),'marR':x(10),'marT':x(7),'marB':x(7),'anchor':'ctr'})
    fill(props,'182B38' if i==0 else '0D1521')
@@ -108,7 +117,7 @@ def main():
  text(tr,7,60,500,530,120,'돌진형 · 포격형 2종 / 3스테이지\n탈취 학습 → 몸 교체 → 교차 사격',25)
  picture(tr,8,620,205,600,425.455)
  text(tr,9,620,645,600,30,'실제 게임 렌더러 캡처 · 임시 도형 그래픽',19,'859CB2')
- text(tr,10,60,680,1100,30,'윤형균  /  2023184021                                            2차 프로젝트 발표  ·  01',19,'859CB2')
+ text(tr,10,60,674,1100,32,'윤형균  /  2023184021                                            2차 프로젝트 발표  ·  01',19,'859CB2')
  files['ppt/slides/slide1.xml']=xml(s)
  rels=E.fromstring(files['ppt/slides/_rels/slide1.xml.rels'])
  for r in list(rels):
@@ -127,7 +136,7 @@ def main():
  native_table(tr,rows)
  text(tr,4,60,600,1160,35,'다음: 직접 플레이 검증 → 자석형·거미형 상호작용 → 최대 8스테이지',24,'4BE3D2')
  text(tr,5,60,642,1160,30,'현재 범위는 2종·3스테이지 프로토타입이며, 확장 개체와 최종 아트는 향후 계획',22,'859CB2')
- text(tr,6,60,680,1160,28,'윤형균  /  2023184021                                           2차 프로젝트 발표  ·  02',19,'859CB2')
+ text(tr,6,60,674,1160,32,'윤형균  /  2023184021                                           2차 프로젝트 발표  ·  02',19,'859CB2')
  files['ppt/slides/slide2.xml']=xml(s)
  # Keep original valid note infrastructure, replace body text completely.
  notes=[
@@ -153,6 +162,7 @@ def main():
   for n,data in files.items():z.writestr(n,data)
  print(target)
  render_preview(target)
+ write_browser_view()
 
 def render_preview(path):
  # XML-driven layout preview. Text/table content stays editable in delivered PPTX.
@@ -199,5 +209,35 @@ def render_preview(path):
       draw_text(d,tc.find(q(A,'txBody')),xx+10,yy+7,widths[j]-20,ht-14);xx+=widths[j]
      d.line((60,yy+ht,1220,yy+ht),fill='#344B5C');yy+=ht
    im.save(OUT/f'slide{i}_preview.png')
+
+
+def write_browser_view():
+ import base64, json
+ images=['data:image/png;base64,'+base64.b64encode((OUT/f'slide{i}_preview.png').read_bytes()).decode() for i in (1,2)]
+ page="""<!doctype html><html lang="ko"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SHELLBOUND 2차 발표</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0d1521;overflow:hidden;color:#e7f0f5;font-family:Malgun Gothic,sans-serif}
+main{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center}
+img{display:block;width:100%;height:100%;object-fit:contain;cursor:pointer}
+#controls{position:fixed;top:12px;right:16px;display:flex;gap:10px;align-items:center;background:#0d1521e8;padding:10px 14px;border-radius:8px;font-size:14px}
+button{border:1px solid #4be3d2;background:#142b37;color:#e7f0f5;border-radius:5px;padding:8px 12px;cursor:pointer}
+html:fullscreen #controls{display:none}
+</style>
+<main><img id="slide" alt="발표 슬라이드"></main>
+<div id="controls"><span id="page"></span><button id="prev">이전</button><button id="next">다음</button><button id="full">전체화면 (F)</button><span>← → 이동 · Esc 종료</span></div>
+<script>
+const slides=IMAGES;let index=0;
+function show(i){index=(i+slides.length)%slides.length;document.getElementById('slide').src=slides[index];document.getElementById('page').textContent=(index+1)+' / '+slides.length;}
+async function full(){if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}
+document.getElementById('prev').onclick=()=>show(index-1);
+document.getElementById('next').onclick=()=>show(index+1);
+document.getElementById('full').onclick=full;
+document.getElementById('slide').onclick=()=>show(index+1);
+document.addEventListener('keydown',e=>{if(['ArrowRight',' ','Enter'].includes(e.key)){e.preventDefault();show(index+1)}else if(e.key==='ArrowLeft')show(index-1);else if(e.key.toLowerCase()==='f')full();else if(e.key==='Home')show(0);else if(e.key==='End')show(slides.length-1)});
+show(location.hash==='#2'?1:0);
+</script></html>""".replace('IMAGES',json.dumps(images))
+ (OUT/'발표보기.html').write_text(page,encoding='utf-8')
 
 if __name__=='__main__':main()
