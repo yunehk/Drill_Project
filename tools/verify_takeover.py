@@ -54,7 +54,7 @@ def playthrough(observer=None,stage=2):
         walk(gun.pos)
         tick(Input(interact=True),.4)
         assert w.host=='gun',('gun board',w.pos,w.candidate())
-        tick(Input(aim=(868,390),attack=True),1.)
+        tick(Input(aim=(868,390),attack=True),5.1)
         assert w.gate_open,'gate not open'
         tick(Input((0,-1),interact=True),.4)
         walk((805,388));walk((930,388));walk((1027,388))
@@ -65,7 +65,7 @@ def capture():
     import ctypes, importlib
     import pico2d as p
     from shellgame.runtime import ensure_renderer
-    from shellgame.drawing import Painter
+    from shellgame.takeover_art import GamePainter as Painter
     from shellgame import takeover_view as view
     from shellgame.takeover import W,H
     p.open_canvas(W,H);ensure_renderer();d=Painter()

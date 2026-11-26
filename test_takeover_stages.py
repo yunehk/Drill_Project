@@ -5,8 +5,8 @@ from tools.verify_takeover import playthrough
 
 class StageTests(unittest.TestCase):
     def test_three_different_authored_layouts_and_increasing_hazards(self):
-        self.assertEqual(len(STAGES),3)
-        self.assertEqual(len({s.solids for s in STAGES}),3)
+        self.assertEqual(len(STAGES),8)
+        self.assertEqual(len({s.solids for s in STAGES}),8)
         self.assertEqual(set(Arena(stage=0).machines),{'ram'})
         self.assertFalse(STAGES[0].turret_interval)
         self.assertFalse(STAGES[1].laser)
