@@ -118,9 +118,14 @@ def arena(d,w,aim):
                 d.text(x-20,625,'압력문',BLUE,14)
             else:
                 dotted(d,(x+b/2,y),(x+b/2,y+h),(36,95,99),12)
-        for x,y,b,h in (GATE_OPEN if w.gate_open else [GATE]):
-            d.rect(x,y,b,h,(68,44,32));d.rect(x,y,b,h,ORANGE,False)
-            for yy in range(y+10,int(y+h),24):d.line(x+2,yy,x+b-2,yy+10,ORANGE)
+        security=w.level.goal in ('purge','boss')
+        for x,y,b,h in w.gate_panels:
+            color=BLUE if security else ORANGE
+            d.rect(x,y,b,h,(24,44,64) if security else (68,44,32))
+            d.rect(x,y,b,h,color,False)
+            for yy in range(int(y+10),int(y+h),24):d.line(x+2,yy,x+b-2,yy+10,color)
+        if security and not w.gate_open:
+            d.text(813,425,'관리자 잠금' if w.level.boss else '경비 잠금',BLUE,14)
         if w.level.powered_gate and not w.gate_open:
             ring(d,868,390,26,GREEN if w.power_ready else BLUE)
             d.text(816,435,'전원 ON' if w.power_ready else '전원 필요',GREEN if w.power_ready else BLUE,14)
@@ -311,7 +316,7 @@ def menu(d,t,progress=None,selection=0,levels=False,practice=False,message=''):
         d.text(73,127,f'클리어 {len(progress.records)}/8  ·  보존 메달 {sum(r["stars"] for r in progress.records.values())}/24',GOLD,16)
     d.text(73,94,'P 연습 · 1–8 빠른 선택 · H 도움말 · F11 전체화면',MUTED,16)
     d.text(73,58,message or 'Tab으로 생각하고, Z로 다른 배치를 시험하세요.',GOLD if message else MUTED,16)
-    d.text(998,22,'v1.0.0',MUTED,14)
+    d.text(998,22,'v1.0.1',MUTED,14)
     if not sprite(d,'core',827,590+math.sin(t*2)*6,116):core(d,827,550,t)
     for i,kind in enumerate(('ram','gun','mag','spider')):
         a=t*.08+i*math.tau/4;x=825+math.cos(a)*150;y=353+math.sin(a)*125

@@ -112,6 +112,29 @@ class AbilityTests(unittest.TestCase):
         self.assertGreater(w.boss.exposed,0)
         self.assertTrue(any(not crate.alive for crate in w.crates))
 
+    def test_upper_wall_hit_does_not_open_unhit_middle(self):
+        w=Arena(stage=1);w.detonate(Bomb(868,610))
+        self.assertTrue(w.gate_open);self.assertTrue(w.broken_gate)
+        self.assertTrue(w.allowed(868,610,11))
+        self.assertFalse(w.allowed(868,390,11))
+
+    def test_repeated_blasts_can_destroy_all_remaining_wall_parts(self):
+        w=Arena(stage=1)
+        for y in (610,390,180):w.detonate(Bomb(868,y))
+        self.assertEqual(len(w.broken_gate),12)
+        self.assertEqual(w.gate_walls,[]);self.assertEqual(w.gate_panels,[])
+
+    def test_unpowered_wall_loses_no_segments(self):
+        w=Arena(stage=4);w.detonate(Bomb(868,610))
+        self.assertEqual(w.broken_gate,set());self.assertFalse(w.gate_open)
+
+    def test_undo_restores_wall_shape_and_collision(self):
+        w=Arena(stage=1);history=Undo();history.take(w)
+        w.detonate(Bomb(868,610));restored=history.restore()
+        self.assertTrue(w.allowed(868,610,11))
+        self.assertFalse(restored.allowed(868,610,11))
+        self.assertEqual(restored.broken_gate,set())
+
 class ProgressTests(unittest.TestCase):
     def test_corrupt_save_is_ignored_and_normal_clear_is_saved(self):
         with tempfile.TemporaryDirectory() as tmp:

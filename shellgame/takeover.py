@@ -120,7 +120,7 @@ class Arena(CampaignRules):
     @property
     def walls(self):
         doors=[d[:4] for i,d in enumerate(self.level.doors) if not self.door_is_open(i)]
-        return self.solids + doors + (GATE_OPEN if self.gate_open else [GATE])
+        return self.solids + doors + self.gate_walls
 
     @property
     def laser_state(self):
@@ -316,11 +316,6 @@ class Arena(CampaignRules):
                 ok = self.move(m, m.direction[0]*speed*dt, m.direction[1]*speed*dt, m.radius)
                 if m.state=='grapple' and distance(m.pos,m.target)<14:m.timer=0
                 if m.kind=='ram' and self.ram_contacts(m):m.timer=0
-                if (self.level.gate_weapon == 'ram' and not self.gate_open and
-                    circle_rect(m.x+m.direction[0]*8, m.y+m.direction[1]*8, m.radius, GATE)):
-                    self.gate_open = True
-                    self.emit('break',868,390,'균열벽 돌파! 하차한 뒤 작은 틈으로 탈출하세요')
-                    m.timer = 0
                 for other in self.machines.values():
                     if other is not m and other.state not in ('wreck', 'piloted', 'stun', 'empty') and distance(m.pos, other.pos) < 57:
                         other.armor = False

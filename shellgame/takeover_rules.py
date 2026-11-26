@@ -7,6 +7,7 @@ from .takeover_levels import WEIGHTS
 class CampaignRules:
     def init_devices(self):
         self.bombs=[]
+        self.broken_gate=set()
         self.drones=[Drone(x,y,armor,mode,anchor=(x,y),phase=i*2)
                      for i,(x,y,armor,mode) in enumerate(self.level.drones)]
         self.crates=[Crate(*entry) for entry in self.level.crates]
@@ -21,6 +22,47 @@ class CampaignRules:
         self.used_practice=self.practice
         for kind in self.level.empty:
             self.machines[kind].state='empty'
+
+    @property
+    def gate_panels(self):
+        from .takeover import GATE,GATE_OPEN
+        if self.level.goal in ('purge','boss') or (self.gate_open and not self.broken_gate):
+            return GATE_OPEN if self.gate_open else [GATE]
+        x,y,w,h=GATE
+        return [(x,y+i*h/12,w,h/12) for i in range(12) if i not in self.broken_gate]
+
+    @property
+    def gate_walls(self):
+        from .takeover import GATE,GATE_OPEN
+        if not self.broken_gate:
+            return GATE_OPEN if self.gate_open else [GATE]
+        # Merge adjacent intact panels for fast collision/path queries. Rendering
+        # keeps panel seams, while physics follows exactly the same missing parts.
+        merged=[]
+        for x,y,w,h in self.gate_panels:
+            if merged and abs(merged[-1][1]+merged[-1][3]-y)<.01:
+                a,b,c,d=merged[-1];merged[-1]=(a,b,c,d+h)
+            else:merged.append((x,y,w,h))
+        return merged
+
+    def break_gate(self,x,y,radius,weapon):
+        from .takeover import GATE
+        if self.level.goal in ('purge','boss') or self.level.gate_weapon!=weapon:return 0
+        if self.level.powered_gate and not self.power_ready:
+            self.emit('block',868,390,message='출구 전원이 부족합니다. 압력판과 웹 릴레이 상태를 확인하세요')
+            return 0
+        gx,gy,gw,gh=GATE;new=[]
+        for i in range(12):
+            rect=(gx,gy+i*gh/12,gw,gh/12)
+            if i not in self.broken_gate and circle_rect(x,y,radius,rect):new.append((i,rect))
+        if not new:return 0
+        for index,(px,py,pw,ph) in new:
+            self.broken_gate.add(index)
+            self.emit('break',px+pw/2,py+ph/2)
+        self.gate_open=True
+        self.message='맞은 벽 조각이 부서졌습니다. 열린 틈으로 이동하거나 남은 벽을 더 부술 수 있습니다'
+        self.message_time=3.
+        return len(new)
 
     @property
     def plate_weights(self):
@@ -135,11 +177,9 @@ class CampaignRules:
 
     def ram_contacts(self,m):
         hit=False
-        if self.level.gate_weapon=='ram' and not self.gate_open:
-            from .takeover import GATE
-            if circle_rect(m.x+m.direction[0]*8,m.y+m.direction[1]*8,m.radius,GATE):
-                self.gate_open=True;hit=True
-                self.emit('break',868,390,message='균열벽 돌파! 본체로 좁은 틈을 지나세요')
+        if self.level.gate_weapon=='ram':
+            contact=any(circle_rect(m.x+m.direction[0]*8,m.y+m.direction[1]*8,m.radius,part) for part in self.gate_walls)
+            if contact:hit=bool(self.break_gate(m.x+m.direction[0]*8,m.y+m.direction[1]*8,72,'ram'))
         for crate in self.crates:
             if crate.alive and distance(m.pos,crate.pos)<m.radius+crate.radius+5:
                 crate.vx,crate.vy=m.direction[0]*400,m.direction[1]*400
@@ -185,14 +225,9 @@ class CampaignRules:
                 self.emit('break',*self.boss.pos,message=f'관리자 손상! 남은 장갑 {self.boss.hp}')
                 if self.boss.hp<=0:self.gate_open=True;self.emit('key',*self.boss.pos,message='정원 정지. 이제 껍질을 내려놓고 출구로 향하세요')
             else:self.emit('block',*self.boss.pos,message='관리자 방패가 닫혀 있습니다. 돌진 또는 전지로 먼저 여세요')
-        if self.level.goal not in ('purge','boss') and not self.gate_open:
+        if self.level.goal not in ('purge','boss'):
             from .takeover import GATE
-            if self.level.gate_weapon=='gun' and circle_rect(b.x,b.y,b.radius,GATE):
-                if self.level.powered_gate and not self.power_ready:
-                    self.emit('block',868,390,message='출구 전원이 부족합니다. 압력판과 웹 릴레이 상태를 확인하세요')
-                else:
-                    self.gate_open=True
-                    self.emit('break',868,390,message='차단벽 파괴! 본체로 좁은 틈을 지나 탈출하세요')
+            if circle_rect(b.x,b.y,b.radius,GATE):self.break_gate(b.x,b.y,b.radius,'gun')
 
     def campaign_step(self,dt,c):
         self.step_dt=dt;self.beams=[];self.magnet_active=False
